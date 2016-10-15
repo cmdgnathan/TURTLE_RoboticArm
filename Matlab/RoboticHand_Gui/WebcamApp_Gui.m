@@ -52,16 +52,20 @@ img.norm_arc = 100; % Number of Normalized Arc Samples
 
 % Main
 state = 0;
-frameRate = tic;
+totHz = tic;
+procHz = tic;
+plotHz = tic;
 while(1)        
     
     % Update Text Boxes
-    
-        % Frame Rate
-            Hz = sprintf('%10.5f',(1/toc(frameRate)));
-            set(hText.Hz, 'String', strcat('Frame Rate...',Hz));    
-            frameRate = tic;
-            
+        % Histogram Width
+            entry = sprintf('%d',img.hist_width);
+            set(hText.HistWidth, 'String', strcat('Histogram Acceptance...',entry));    
+        % Overall Rate
+            entry = sprintf('%10.5f',(1/toc(totHz)));
+            set(hText.totHz, 'String', strcat('Overall Rate...',entry));    
+            totHz = tic;
+       
             
             
             
@@ -74,7 +78,11 @@ while(1)
         imshow(hand, 'Parent', hAxes.axis1);
         
     elseif(state == 1)
-        
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+        % PROCESSING TIMER
+        procHz = tic;
+                  
         % Resize Image
         hand = imresize(snapshot(cam), img.resize); 
         hand_g = rgb2gray(hand);        
@@ -160,9 +168,19 @@ while(1)
         hand_rect = st.BoundingBox;
                                                                
         
+        % PROCESSING TIMER
+        entry = sprintf('%10.5f',(1/toc(procHz)));
+        set(hText.procHz, 'String', strcat('Processing Rate...',entry));         
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         %%%%%%%%%%%%%%
         % GUI OUTPUT %
         %%%%%%%%%%%%%%
+
+        % PLOTTING TIMER
+        plotHz = tic; 
+
             % AXIS 1
                 cla(hAxes.axis1,'reset');       
                 imshow(hand, 'Parent', hAxes.axis1);   
@@ -192,6 +210,11 @@ while(1)
                 plot(img.arc_crossing, 'Color', 'Red', 'Parent', hAxes.axis7);
                 set(hAxes.axis7,'Color','Black');
 
+        % PLOTTING TIMER
+        entry = sprintf('%10.5f',(1/toc(plotHz)));
+        set(hText.plotHz, 'String', strcat('Plotting Rate.....',entry));                    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
         %%%%%%%%%%%%%%
         % NEXT STATE %
         %%%%%%%%%%%%%%
@@ -270,18 +293,17 @@ end
                'tag',figTag, ...
                'renderer','painters', ...
                'position',screensize + [10 45 -20 -75]);
-               %'position',[680 678 480 240]);
                 
         % Create axes and titles
         hAxes.axis1 = createPanelAxisTitle(hFig,[0.00 0.20 0.50 0.80],'Raw Image'); % [X Y W H]
-        hAxes.axis2 = createPanelAxisTitle(hFig,[0.50 0.60 0.25 0.40],'Processed');
-        hAxes.axis3 = createPanelAxisTitle(hFig,[0.75 0.60 0.25 0.40],'Processed');
-        hAxes.axis4 = createPanelAxisTitle(hFig,[0.50 0.20 0.25 0.40],'Processed');
-        hAxes.axis5 = createPanelAxisTitle(hFig,[0.75 0.20 0.25 0.40],'Processed');
-
         
-        hAxes.axis6 = createPanelAxisTitle(hFig,[0.00 0.05 0.50 0.15],'Processed');
-        hAxes.axis7 = createPanelAxisTitle(hFig,[0.50 0.05 0.50 0.15],'Processed');
+        hAxes.axis2 = createPanelAxisTitle(hFig,[0.50 0.60 0.25 0.40],'Masked Image');
+        hAxes.axis3 = createPanelAxisTitle(hFig,[0.75 0.60 0.25 0.40],'Polar Coordinate Conversion');
+        hAxes.axis4 = createPanelAxisTitle(hFig,[0.50 0.20 0.25 0.40],'Blob Image');
+        hAxes.axis5 = createPanelAxisTitle(hFig,[0.75 0.20 0.25 0.40],'Processed');
+        
+        hAxes.axis6 = createPanelAxisTitle(hFig,[0.00 0.05 0.50 0.15],'');
+        hAxes.axis7 = createPanelAxisTitle(hFig,[0.50 0.05 0.50 0.15],'');
 
     end
 
@@ -298,47 +320,52 @@ end
         hAxis.YColor = [1 1 1];
         % Set video title using uicontrol. uicontrol is used so that text
         % can be positioned in the context of the figure, not the axis.
-%         titlePos = [pos(1)+0.02 pos(2)+pos(3)+0.3 0.3 0.07];
-%         uicontrol('style','text',...
-%             'String', axisTitle,...
-%             'Units','Normalized',...
-%             'Parent',hFig,'Position', titlePos,...
-%             'BackgroundColor',hFig.Color);
+        if(~strcmp(axisTitle,''))        
+            titlePos = [pos(1) pos(2) pos(3) 0.02];
+            uicontrol('style','text',...
+                'String', axisTitle,...
+                'Units','Normalized',...
+                'Parent',hFig,'Position', titlePos,...
+                'BackgroundColor',hFig.Color);
+        end
     end
 
     function [hText] = insertButtons(hFig,hAxes,cam)
 
-        % Capture Image for Histogram Analysis
-        uicontrol(hFig,'unit','pixel','style','pushbutton','string','Capture',...
-                'position',[10 10 75 25], 'tag','pb1','callback', ...
-                {@captureCallback,cam,hAxes});
+        % BUTTONS
+            % Capture Image for Histogram Analysis
+            uicontrol(hFig,'unit','pixel','style','pushbutton','string','Capture',...
+                    'position',[10 10 75 25], 'tag','pb1','callback', ...
+                    {@captureCallback,cam,hAxes});
+            % Exit Button
+            uicontrol(hFig,'unit','pixel','style','pushbutton','string','Exit',...
+                    'position',[100 10 50 25],'callback', ...
+                    {@exitCallback,cam,hFig});
+            
+        % SLIDERS
+            hText.HistWidth = uicontrol('Style','text',...
+                'Position',[400 25 200 15],...
+                'String','Histogram Acceptance');
 
-        % Exit Button
-        uicontrol(hFig,'unit','pixel','style','pushbutton','string','Exit',...
-                'position',[100 10 50 25],'callback', ...
-                {@exitCallback,cam,hFig});
-            
-        % Threshold Width Slider
-        txt = uicontrol('Style','text',...
-            'Position',[400 25 120 15],...
-            'String','Histogram Acceptance');
+            sld = uicontrol('Style', 'slider',...
+                'Min',1,'Max',50,'Value',img.hist_width,...
+                'SliderStep', [1/(50-1), 1/(50-1)],... 
+                'Position', [400 5 200 20],...
+                'Callback', @sliderCB1);  
         
-        sld = uicontrol('Style', 'slider',...
-            'Min',1,'Max',50,'Value',img.hist_width,...
-            'Position', [400 5 120 20],...
-            'Callback', @sliderCB1);  
-        
-        % TEXTBOX
-        
-        % Frame Rate
-        hText.Hz = uicontrol('Style','text',...
-            'Position',[600 25 200 15],...
-            'String','Frame Rate: 0');        
-        
-        hText.PlotT = uicontrol('Style','text',...
-            'Position',[600 5 200 15],...
-            'String','Frame Rate: 0');          
-            
+        % DATA        
+            % Overall Rate
+            hText.totHz = uicontrol('Style','text',...
+                'Position',[600 25 200 15],...
+                'String','Overall Rate...0');        
+            % Processing Rate           
+            hText.procHz = uicontrol('Style','text',...
+                'Position',[800 25 200 15],...
+                'String','Processing Rate...0');          
+            % Plotting Rate
+            hText.plotHz = uicontrol('Style','text',...
+                'Position',[800 5 200 15],...
+                'String','Plotting Rate.....0');                      
     end
 
     function captureCallback(hObject,~,cam,hAxes)        
@@ -346,7 +373,7 @@ end
     end
 
     function sliderCB1(hObject,~)        
-        img.hist_width = hObject.Value;        
+        img.hist_width = uint8(hObject.Value);
     end
 
     function exitCallback(~,~,cam,hFig)
