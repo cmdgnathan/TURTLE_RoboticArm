@@ -16,7 +16,7 @@ img.hist_step = 1;
 
 img.hist_bins = 256; % Number of Histogram Bins
 img.hist_thresh = 0.8; % Threshold Proportion of Maximum Value
-img.hist_width = 40/img.hist_n; % 20 Intensity Value to Left and Right
+img.hist_width = round(40/img.hist_n); % 20 Intensity Value to Left and Right
 
 img.hist_i = 1; % Histogram Iterator
 
@@ -104,12 +104,12 @@ while(1)
         BW = hand_mask;
         CC = bwconncomp(BW);
         numPixels = cellfun(@numel,CC.PixelIdxList);
-        [biggest,idx] = max(numPixels);
+        [~,idx] = max(numPixels);
         BW(CC.PixelIdxList{idx}) = 0;
         palm_blob = hand_mask - BW;
         
         % MEDIAN FILTER
-        palm_med = medfilt2(palm_blob,[3 3]);       
+        palm_med = ordfilt2(palm_blob, 5, true(3,3));
         
         
         % CALCULATE CENTROID
@@ -186,8 +186,8 @@ while(1)
                 imshow(hand, 'Parent', hAxes.axis1);   
                 rectangle('Position',hand_rect,'EdgeColor','r','LineWidth',2, 'Parent', hAxes.axis1);         
             % AXIS 2
-%                 cla(hAxes.axis2,'reset');       
-%                 imshow(palm_blob, 'Parent', hAxes.axis2);
+                cla(hAxes.axis2,'reset');       
+                imshow(hand_mask, 'Parent', hAxes.axis2);
             % AXIS 3
                 cla(hAxes.axis3,'reset');       
                 imshow(mask, 'Parent', hAxes.axis3);     
@@ -195,12 +195,12 @@ while(1)
                 cla(hAxes.axis4,'reset');       
                 imshow(palm_med, 'Parent', hAxes.axis4);    
             % AXIS 5
-%                 cla(hAxes.axis5,'reset');  
-%                 axes(hAxes.axis5);
-%                 for a=img.arc_n:-1:1
-%                     plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
-%                 end
-%                 hold off;
+                cla(hAxes.axis5,'reset');  
+                axes(hAxes.axis5);
+                for a=img.arc_n:-1:1
+                    plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
+                end
+                hold off;
             % AXIS 6        
                 cla(hAxes.axis6,'reset');       
                 plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
