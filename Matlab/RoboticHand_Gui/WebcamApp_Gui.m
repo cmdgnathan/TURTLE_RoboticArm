@@ -9,7 +9,7 @@ cam = webcam('WebCam');
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor
-img.hist_n = 5;    % Number of Histogram Regions
+img.hist_n = 5;%5;    % Number of Histogram Regions
 
 img.hist_pad = 10; 
 img.hist_step = 1;
@@ -19,6 +19,8 @@ img.hist_thresh = 0.8; % Threshold Proportion of Maximum Value
 img.hist_width = round(40/img.hist_n); % 20 Intensity Value to Left and Right
 
 img.hist_i = 1; % Histogram Iterator
+
+
 
 % GUI
 [hFig, hAxes] = createFigureAndAxes();
@@ -43,6 +45,25 @@ img.arc_crossing = zeros(img.arc_n,1);
 img.thick = 1; % Arc Thickness
 img.norm_arc = 100; % Number of Normalized Arc Samples    
 
+% FINGER NODES
+img.node_n = 500;
+img.node_id = 0;
+for n=img.node_n:-1:1
+    img.node(n).arc = 0;
+    img.node(n).left = 0;
+    img.node(n).right = 0;
+    img.node(n).parent = 0;
+    img.node(n).base = false;
+    img.node(n).id = 0;
+end
+
+% FINGER TIPS
+img.finger_n = 100;
+for f=img.finger_n:-1:1
+    img.finger(f).left = 0;
+    img.finger(f).right = 0;
+    img.finger(f).arc = 0;
+end
 
 % ITERABLE CIRCLE LUT SERIES
 [ img ] = IterableCircle( img );
@@ -163,10 +184,20 @@ while(1)
             img.intersect = img.intersect + a^2*img.circle(a).intersection_norm;
         end                                     
         
+        % DETERMINE FINGERS
+        %[ img ] = Fingering( img );
+        
+        
         % BLOB BOUNDING BOX
         st = regionprops(palm_blob, 'BoundingBox');
         hand_rect = st.BoundingBox;
-                                                               
+          
+        
+        
+        
+        
+        
+        
         
         % PROCESSING TIMER
         entry = sprintf('%10.5f',(1/toc(procHz)));
@@ -206,10 +237,23 @@ while(1)
                 plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
                 set(hAxes.axis6,'Color','Black');
             % AXIS 7
-                cla(hAxes.axis7,'reset');               
-                plot(img.arc_crossing, 'Color', 'Red', 'Parent', hAxes.axis7);
-                set(hAxes.axis7,'Color','Black');
-
+%                 cla(hAxes.axis7,'reset');    
+%                 for f=1:img.node_id
+%                     x=false(img.norm_arc);
+%                     x(img.finger(f).left:img.finger(f).right) = true;
+%                     plot(1.0*x, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;
+%                 end
+%                 set(hAxes.axis7,'Color','Black');
+                
+                
+                
+%                 for f=1:img.f_n
+%                     bar(f, img.finger(f).top.radius); hold on;  
+%                 end
+%                 hold off;
+                
+                
+                                    
         % PLOTTING TIMER
         entry = sprintf('%10.5f',(1/toc(plotHz)));
         set(hText.plotHz, 'String', strcat('Plotting Rate.....',entry));                    
