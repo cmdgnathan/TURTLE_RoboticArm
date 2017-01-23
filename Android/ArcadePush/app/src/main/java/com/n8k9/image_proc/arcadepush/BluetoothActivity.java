@@ -20,15 +20,10 @@ import java.util.Set;
 
 public class BluetoothActivity extends Activity {
 
-//    @Override
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.bluetooth_activity);
-//    }
-
     Button btnPaired;
     ListView devicelist;
-    //Bluetooth
+
+    // Bluetooth
     private BluetoothAdapter myBluetooth = null;
     private Set<BluetoothDevice> pairedDevices;
     public static String EXTRA_ADDRESS = "device_address";
@@ -39,19 +34,18 @@ public class BluetoothActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.bluetooth_activity);
 
-        //Calling widgets
+        //Calling Widgets
         btnPaired = (Button)findViewById(R.id.buttonPair);
         devicelist = (ListView)findViewById(R.id.listView);
 
-        //if the device has bluetooth
+        // if the device has bluetooth
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
         if(myBluetooth == null)
         {
-            //Show a mensag. that the device has no bluetooth adapter
             Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
 
-            //finish apk
+            // Finish APK
             finish();
         }
         else if(!myBluetooth.isEnabled())
@@ -98,15 +92,16 @@ public class BluetoothActivity extends Activity {
     {
         public void onItemClick (AdapterView<?> av, View v, int arg2, long arg3)
         {
+
             // Get the device MAC address, the last 17 chars in the View
             String info = ((TextView) v).getText().toString();
             String address = info.substring(info.length() - 17);
 
             // Make an intent to start next activity.
-            Intent i = new Intent(BluetoothActivity.this, MainActivity_show_camera.class);
+            Intent i = new Intent(BluetoothActivity.this, SimpleBluetooth.class);
 
             //Change the activity.
-            i.putExtra(EXTRA_ADDRESS, address); //this will be received at ledControl (class) Activity
+            i.putExtra(EXTRA_ADDRESS, address); // Received in Dependent Activity
             startActivity(i);
         }
     };

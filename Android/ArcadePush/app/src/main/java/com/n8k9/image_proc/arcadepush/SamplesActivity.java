@@ -31,6 +31,11 @@ public class SamplesActivity extends AppCompatActivity {
         startActivity(sampleIntent);
     }
 
+    public void backgroundSubtraction(View v) {
+        sampleIntent = new Intent(this, BackgroundSubtractionActivity.class);
+        startActivity(sampleIntent);
+    }
+
 
 
 /*

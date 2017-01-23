@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merger version="3"><dataSet config="main"><source path="C:\Users\Nathan\Google Drive\N8K9\TURTLE\TURTLE_RoboticArm\Android\ArcadePush\openCVLibrary300\src\main\jniLibs"/></dataSet><dataSet config="release"><source path="C:\Users\Nathan\Google Drive\N8K9\TURTLE\TURTLE_RoboticArm\Android\ArcadePush\openCVLibrary300\src\release\jniLibs"/></dataSet></merger>
+<merger version="3"><dataSet config="main"><source path="C:\Users\cmdgn\Projects\TURTLE_RoboticArm\Android\ArcadePush\openCVLibrary300\src\main\jniLibs"/></dataSet><dataSet config="release"><source path="C:\Users\cmdgn\Projects\TURTLE_RoboticArm\Android\ArcadePush\openCVLibrary300\src\release\jniLibs"/></dataSet></merger>

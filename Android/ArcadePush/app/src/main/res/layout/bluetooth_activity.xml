@@ -9,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Paired Devices"
-        android:id="@+id/textView"
+        android:id="@+id/textViewIndex"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
@@ -30,5 +30,5 @@
         android:id="@+id/listView"
         android:layout_centerHorizontal="true"
         android:layout_above="@+id/buttonPair"
-        android:layout_below="@+id/textView" />
+        android:layout_below="@+id/textViewIndex" />
 </RelativeLayout>

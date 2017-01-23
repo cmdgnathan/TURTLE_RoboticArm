@@ -14,31 +14,38 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class SimpleBluetooth extends Activity {
 
     TextView textView;
 
-    Button btn_Transmit, btn_Receive, btn_Disconnect;
+    private Button btn_Transmit, btn_Receive, btn_Disconnect;
+    private SeekBar barThumb, barIndex, barMiddle, barRing, barPinky;
+    private int[] barProgress, minTare, maxTare, fingers64;
+    private double[] normFingers;
+    private String[] txFingers;
 
-    TextView txt_Timer;
-
-    String Line_1;
-    String Line_2;
-    String Line_3;
-    String Line_4;
-    String Line_5;
-
+    // Vibrate
     public Vibrator v;
 
     String address = null;
     private ProgressDialog progress;
+
+    // Bluetooth
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
+
+    // Timer
+    private Timer txTimer;
 
     //SPP UUID. Look for it
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -54,32 +61,40 @@ public class SimpleBluetooth extends Activity {
         // Setup Layout View
         setContentView(R.layout.activity_simple_bluetooth);
 
-
-
-
-
         // Call Widgets
         btn_Transmit = (Button)findViewById(R.id.buttonTransmit);
         btn_Receive = (Button)findViewById(R.id.buttonReceive);
         btn_Disconnect = (Button)findViewById(R.id.buttonDisconnect);
 
+        barThumb = (SeekBar) findViewById(R.id.barThumb);
+        barIndex = (SeekBar) findViewById(R.id.barIndex);
+        barMiddle = (SeekBar) findViewById(R.id.barMiddle);
+        barRing = (SeekBar) findViewById(R.id.barRing);
+        barPinky = (SeekBar) findViewById(R.id.barPinky);
+
+        barProgress = new int[] {0, 0, 0, 0, 0};
+        minTare = new int[] {0, 0, 0, 0, 0};
+        maxTare = new int[] {100, 100, 100, 100, 100};
+        normFingers = new double[] {0, 0, 0, 0, 0};
+        fingers64 = new int[] {0, 0, 0, 0, 0};
+        txFingers = new String[] {"","","","",""};
+
 
         // Initialize Vibration
         v = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
 
-        new ConnectBT().execute(); //Call the class to connect
+        // Connect Bluetooth
+        new ConnectBT().execute();
 
-
+        // Buttons
         btn_Transmit.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                msg("Hi");
-                //Transmit();
+                Transmit();
             }
         });
-
         btn_Receive.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -88,25 +103,51 @@ public class SimpleBluetooth extends Activity {
                 Receive();
             }
         });
-
         btn_Disconnect.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                Disconnect(); //close connection
+                Disconnect();
             }
         });
 
 
+
+        // Transmission Timer
+        txTimer = new Timer();
+        txTimer.schedule(new TimerTask() {
+            @Override
+            public void run(){
+                TimerMethod();
+            }
+        }, 3000, 100);
+
+
+
+
     }
 
-    private void Receive()
-    {
-        if (btSocket!=null)
-        {
-            try
-            {
+    private void TimerMethod(){ this.runOnUiThread(Timer_Tick); }
+
+    private Runnable Timer_Tick = new Runnable() { public void run() { Transmit(); } };
+
+    private void CollectPositions(){
+        barProgress[0] = barThumb.getProgress();
+        barProgress[1] = barIndex.getProgress();
+        barProgress[2] = barMiddle.getProgress();
+        barProgress[3] = barRing.getProgress();
+        barProgress[4] = barPinky.getProgress();
+
+        for(int i = 0; i < barProgress.length; i++){
+            normFingers[i] = 1.0*(barProgress[i]-minTare[i])/(maxTare[i]-minTare[i]);
+            txFingers[i] = String.format("%02.0f",99*normFingers[i]);//String.format("%02d",99*normFingers[i]);
+        }
+    }
+
+    private void Receive(){
+        if (btSocket!=null){
+            try{
                 // For Reading
                 byte[] buffer = new byte[1024];
                 int bytes;
@@ -118,31 +159,43 @@ public class SimpleBluetooth extends Activity {
 
 
             }
-            catch (IOException e)
-            {
+            catch (IOException e){
                 msg("Error");
             }
         }
     }
 
 
-    private void Transmit()
-    {
-//        timer_sequence();
+    private void Transmit(){
+        if (btSocket!=null){
+            try{
+                // Collect SeekBar Positions
+                CollectPositions();
 
-        if (btSocket!=null)
-        {
-            try
-            {
+                // Create Tx String
+                String string_Transmit = "";
+                for(int i = 0; i < txFingers.length; i++){
+                    string_Transmit += i + ":" + txFingers[i] + "\n";
+                }
+                btSocket.getOutputStream().write(string_Transmit.getBytes());
 
 
-                String string_Transmit = "HELLO";
-                btSocket.getOutputStream().write(string_Transmit.toString().getBytes());
-                msg("Sent: "+string_Transmit);
+
+                // 1 Byte per Finger Angle
+                // 7-5: ID ... 4-0: Value
+                /*
+                byte[] txByte = new byte[5];
+                for(int i = 0; i < txByte.length; i++){
+                    txByte[i] = (i << 3) | ()
+                }
+                // Transmit
+                btSocket.getOutputStream().write();
+                */
+
+
             }
-            catch (IOException e)
-            {
-                msg("Error");
+            catch (IOException e){
+                msg("Tx Error");
             }
         }
 
@@ -162,6 +215,10 @@ public class SimpleBluetooth extends Activity {
             catch (IOException e)
             { msg("Error");}
         }
+
+        // Cancel Bluetooth Timer
+        txTimer.cancel();
+
         finish(); //return to the first layout
     }
 

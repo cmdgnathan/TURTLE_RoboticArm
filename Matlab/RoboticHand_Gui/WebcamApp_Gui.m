@@ -5,7 +5,7 @@ clearvars;
 close all;
 
 % Create Webcam Object
-cam = webcam('WebCam');
+cam = webcam('USB2.0 VGA UVC WebCam');
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor

@@ -53,7 +53,12 @@
             android:screenOrientation="portrait" >
         </activity>
 
-
+        <activity
+            android:name=".BackgroundSubtractionActivity"
+            android:label="@string/app_name"
+            android:parentActivityName=".SamplesActivity"
+            android:screenOrientation="landscape" >
+        </activity>
 
 
     </application>
