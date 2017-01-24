@@ -34,8 +34,10 @@ void loop(){
   for(int i = 0; i < 5; i++){
     Serial.print(i);
     Serial.print(":");
-    Serial.println(finger[i]);
+    Serial.print(finger[i]);
+    Serial.print("\t");
   }
+  Serial.println();
         
     
 

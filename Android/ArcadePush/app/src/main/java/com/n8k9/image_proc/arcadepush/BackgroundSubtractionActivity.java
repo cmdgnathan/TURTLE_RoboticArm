@@ -9,9 +9,13 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+
+import org.opencv.core.Point;
 
 
 
@@ -21,8 +25,14 @@ public class BackgroundSubtractionActivity extends AppCompatActivity implements 
 
     private CameraBridgeViewBase mOpenCvCameraView;
 
-    private Mat frame;
-    private Mat bgMat;
+    private Mat rgba;
+    private Mat gray;
+
+    private Mat fgMask;
+
+    private Mat background;
+    private Mat backImage;
+    private Mat foreground;
 
 
 
@@ -95,56 +105,92 @@ public class BackgroundSubtractionActivity extends AppCompatActivity implements 
 
 
     public void onCameraViewStarted(int width, int height) {
-        frame = new Mat();
-        bgMat = new Mat();
+        rgba = new Mat();
+        gray = new Mat();
+
+        fgMask = new Mat();
+
+        background = new Mat();
+        backImage = new Mat();
+        foreground = new Mat();
+
+        // Disable Autofocus
+        mOpenCvCameraView.setFocusable(false);
     }
 
     public void onCameraViewStopped() {
         // Explicitly deallocate Mats
-        if (frame != null)
-            frame.release();
+        if (rgba != null)
+            rgba.release();
 
-        if (bgMat != null)
-            bgMat.release();
+        if (gray != null)
+            gray.release();
 
-        frame = null;
-        bgMat = null;
+        if (fgMask != null)
+            fgMask.release();
+
+        if (background != null)
+            background.release();
+
+        if (backImage != null)
+            backImage.release();
+
+        if (foreground != null)
+            foreground.release();
+
+
+
+
+        rgba = null;
+        gray = null;
+        fgMask = null;
+        background = null;
+        backImage = null;
+        foreground = null;
     }
 
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        Mat rgba = inputFrame.rgba();
-        Size sizeRgba = rgba.size();
+        // Input Frames
+        rgba = inputFrame.rgba();
+        gray = inputFrame.gray();
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // BACKGROUND SUBTRACTION
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        // Initialize Background to First Frame
+        if(background.empty()){
+            gray.convertTo(background, CvType.CV_32F);
+        }
+
+        // Convert Background to 8U
+        background.convertTo(backImage, CvType.CV_8U);
+
+        // Compute Difference Between Current Image and Background
+        Core.absdiff(backImage, gray, foreground);
+
+        Imgproc.threshold(foreground, fgMask, 50, 255, Imgproc.THRESH_BINARY);
+
+
+        Imgproc.accumulateWeighted(gray, background, 0.01);//, outputFrame);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-
-
-        /*
-        Mat rgbaInnerWindow;
-
-        int rows = (int) sizeRgba.height;
-        int cols = (int) sizeRgba.width;
-
-        int left = cols / 8;
-        int top = rows / 8;
-
-        int width = cols * 3 / 4;
-        int height = rows * 3 / 4;
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // COLOR THRESHOLDING
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-
-        rgbaInnerWindow = rgba.submat(top, top + height, left, left + width);
-        Imgproc.Canny(rgbaInnerWindow, frame, 80, 90);
-        Imgproc.cvtColor(frame, rgbaInnerWindow, Imgproc.COLOR_GRAY2BGRA, 4);
-        rgbaInnerWindow.release();
-        */
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-        return rgba;
+        //return foreground;
+        return fgMask;
     }
+
 
 
 
@@ -154,6 +200,8 @@ public class BackgroundSubtractionActivity extends AppCompatActivity implements 
         super.onBackPressed();
         finish();
     }
+
+    //class ColorProfile
 
 
 
