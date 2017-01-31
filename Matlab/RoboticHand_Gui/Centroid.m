@@ -40,6 +40,6 @@ function [ img ] = Centroid( img, I )
     img.x_cent = uint16(1.0 * img.x_cent / img.n_cent);
     img.y_cent = uint16(1.0 * img.y_cent / img.n_cent);
     
-        
+        %reys change
 end
 
