@@ -41,5 +41,6 @@ function [ img ] = Centroid( img, I )
     img.y_cent = uint16(1.0 * img.y_cent / img.n_cent);
     
         %reys change
+        %Jim's change
 end
 
