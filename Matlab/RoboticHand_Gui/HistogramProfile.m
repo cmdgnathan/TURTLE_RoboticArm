@@ -29,19 +29,18 @@ function [ img ] = HistogramProfile( img, roi )
 
 %%%
 % AVERAGE
-%         img.color(c).xHist_avg = 0;
-%         img.color(c).xHist_n = 0;
-%         for i = img.hist_pad:img.hist_step:length(img.color(c).yHist)-img.hist_pad
-%             if(img.color(c).yHist(i)>thresh)
-%                 img.color(c).xHist_avg = img.color(c).xHist_avg + i;
-%                 img.color(c).xHist_n = img.color(c).xHist_n + 1;
-%             end
-%         end
-%         
-%         img.color(c).xHist_avg = uint8(img.color(c).xHist_avg/img.color(c).xHist_n);
-%         
-%         img.color(c).xHist_min = img.color(c).xHist_avg - 20;
-%         img.color(c).xHist_max = img.color(c).xHist_avg + 20;
+         img.color(c).xHist_avg = 0;
+         img.color(c).xHist_n = 0;
+         for i = img.hist_pad:img.hist_step:length(img.color(c).yHist)-img.hist_pad
+             if(img.color(c).yHist(i)>thresh)
+                 img.color(c).xHist_avg = img.color(c).xHist_avg + i;
+                 img.color(c).xHist_n = img.color(c).xHist_n + 1;
+             end
+         end
+         
+        img.hist(img.hist_i).color(c).xHist_avg  = uint8(img.color(c).xHist_avg/img.color(c).xHist_n);
+        img.hist(img.hist_i).color(c).xHist_min  = img.color(c).xHist_avg - 20;
+        img.hist(img.hist_i).color(c).xHist_max  = img.color(c).xHist_avg + 20;
 
 
         
@@ -58,16 +57,16 @@ function [ img ] = HistogramProfile( img, roi )
 %             end                
 %         end
         
-      % MAXIMUM
-        [~,img.color(c).xHist_med] = max(img.color(c).yHist);
-        
-        img.color(c).xHist_min = max(1,                            img.color(c).xHist_med - img.hist_width);
-        img.color(c).xHist_max = min(length(img.color(c).yHist)-1, img.color(c).xHist_med + img.hist_width);        
-
-
-        img.hist(img.hist_i).color(c).xHist_med = img.color(c).xHist_med;
-        img.hist(img.hist_i).color(c).xHist_min = img.color(c).xHist_min;
-        img.hist(img.hist_i).color(c).xHist_max = img.color(c).xHist_max;
+ %     % MAXIMUM
+ %       [~,img.color(c).xHist_med] = max(img.color(c).yHist);
+ %       
+ %       img.color(c).xHist_min = max(1,                            img.color(c).xHist_med - img.hist_width);
+ %       img.color(c).xHist_max = min(length(img.color(c).yHist)-1, img.color(c).xHist_med + img.hist_width);        
+ %
+ %
+ %       img.hist(img.hist_i).color(c).xHist_med = img.color(c).xHist_med;
+ %       img.hist(img.hist_i).color(c).xHist_min = img.color(c).xHist_min;
+ %       img.hist(img.hist_i).color(c).xHist_max = img.color(c).xHist_max;
         
         
         % Transfer Histogram Contents
