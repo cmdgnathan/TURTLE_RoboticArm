@@ -1,7 +1,9 @@
 #include <string.h>
-#include <AFMotor.h>
+//#include <AFMotor.h>
+#include <Servo.h>
 
-AF_DCMotor motor(2);
+//AF_DCMotor motor(2);
+Servo myservo;
 
 // Serial Buffer
 char buf[64]; 
@@ -18,18 +20,20 @@ void setup() {
 
   bufpos = 0; // Initialize Buffer Position
 
-  // turn on motor
-  motor.setSpeed(200); 
-  motor.run(RELEASE);
-
+//  // turn on motor
+//  motor.setSpeed(200); 
+//  motor.run(RELEASE);
+  myservo.attach(9) ;//servo attached to 9 pin on Arduino
 }
 
 void loop(){
   // Bluetooth Read (Tx1,Rx1)
   bluetoothRead();
 
-  motor.run(FORWARD);
-  motor.setSpeed((int)(255*finger[0]));
+//  motor.run(FORWARD);
+//  motor.setSpeed((int)(255*finger[0]));
+
+    myservo.write((int)(180*finger[0]));
 
   for(int i = 0; i < 5; i++){
     Serial.print(i);
@@ -64,7 +68,7 @@ void bluetoothRead(){
       
       token = (strtok(NULL,":"));
       finger[finger_i] = atoi(token) / 99.0;
-
+      
       //////////////////////////////////////
       // VERIFY
       //Serial.print(finger_i);
