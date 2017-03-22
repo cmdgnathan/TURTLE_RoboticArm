@@ -1,9 +1,11 @@
 #include <string.h>
-//#include <AFMotor.h>
+#include <AFMotor.h>
 #include <Servo.h>
 
-//AF_DCMotor motor(2);
+AF_DCMotor motor(2);
 Servo myservo;
+
+boolean servo = false;
 
 // Serial Buffer
 char buf[64]; 
@@ -20,21 +22,32 @@ void setup() {
 
   bufpos = 0; // Initialize Buffer Position
 
-//  // turn on motor
-//  motor.setSpeed(200); 
-//  motor.run(RELEASE);
-  myservo.attach(9) ;//servo attached to 9 pin on Arduino
+  if(servo){
+    myservo.attach(9); //servo attached to 9 pin on Arduino  
+  }
+  else{    
+    motor.setSpeed(200); // turn on motor
+    motor.run(RELEASE);
+  }
+  
+  
 }
 
 void loop(){
   // Bluetooth Read (Tx1,Rx1)
   bluetoothRead();
 
-//  motor.run(FORWARD);
-//  motor.setSpeed((int)(255*finger[0]));
-
+  if(servo){
     myservo.write((int)(180*finger[0]));
+  }
+  else{
+    motor.run(FORWARD);
+    motor.setSpeed((int)(255*finger[2]));
+  }
 
+    
+
+/*
   for(int i = 0; i < 5; i++){
     Serial.print(i);
     Serial.print(":");
@@ -42,7 +55,7 @@ void loop(){
     Serial.print("\t");
   }
   Serial.println();
-        
+  */      
     
 
 
@@ -52,8 +65,13 @@ void loop(){
 
 // Bluetooth Read
 void bluetoothRead(){
+
+  
   while(Serial1.available()) {
-    char inchar = Serial1.read();
+    char inchar = Serial1.read(); 
+
+    // DEBUG
+    //Serial.print(inchar);
 
     if(inchar != '\n'){ // Packet Terminator
       buf[bufpos] = inchar;
@@ -76,6 +94,7 @@ void bluetoothRead(){
       //Serial.println(finger[finger_i]);
       //////////////////////////////////////
     }
+    
     
     
   }  

@@ -7,8 +7,12 @@ close all;
 % Create Webcam Object
 %cam = webcam('USB2.0 VGA UVC WebCam');
 cam = webcam('USB Video Device');
-cam = webcam('USB Camera');
+%cam = webcam('USB Camera');
 
+% BLUETOOTH
+instrreset;
+bt = Bluetooth('HC-05',1);
+fopen(bt);
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor
@@ -90,7 +94,6 @@ pinky_max = 1;
 % Main
 state = 0;
 totHz = tic;
-procHz = tic;
 plotHz = tic;
 while(1)        
     
@@ -253,11 +256,11 @@ while(1)
 
 %         %LEFT HAND: CURRENT POSITION
 
-            thumb=max(img.intersect(0:10));
-            index=max(img.intersect(10:20));
-            middle=max(img.intersect(20:27));
-            ring=max(img.intersect(27:35));
-            pinky=max(img.intersect(35:5));
+            thumb=  max(img.intersect(1 :10));
+            index=  max(img.intersect(11:20));
+            middle= max(img.intersect(21:27));
+            ring=   max(img.intersect(28:35));
+            pinky=  max(img.intersect(36:50));
             
             %RIGHT HAND: CURRENT POSITION 
             %?????????? NEED TO DO THE BINS
@@ -281,7 +284,29 @@ while(1)
             index_norm = index/index_max;
             middle_norm = middle/middle_max;
             ring_norm = ring/ring_max;
-            pinky_norm = pinky/pinky_norm;
+            pinky_norm = pinky/pinky_max;
+            
+            
+            
+            Tx_0 = strcat( '0:', sprintf('%02.0f',99*thumb_norm) );
+            Tx_1 = strcat( '1:', sprintf('%02.0f',99*index_norm) );
+            Tx_2 = strcat( '2:', sprintf('%02.0f',99*middle_norm) );
+            Tx_3 = strcat( '3:', sprintf('%02.0f',99*ring_norm) );
+            Tx_4 = strcat( '4:', sprintf('%02.0f',99*pinky_norm) );
+            
+            % Bluetooth Output
+            set(hText.fingers, 'String', strcat(Tx_0,Tx_1,Tx_2,Tx_3,Tx_4));         
+            
+            fwrite(bt, strcat(Tx_0));
+            fwrite(bt, char(10));
+            fwrite(bt, strcat(Tx_1));
+            fwrite(bt, char(10));
+            fwrite(bt, strcat(Tx_2));
+            fwrite(bt, char(10));
+            fwrite(bt, strcat(Tx_3));
+            fwrite(bt, char(10));
+            fwrite(bt, strcat(Tx_4));
+            fwrite(bt, char(10));
             
             %OUTPUT VIA BLUETOOTH ????????????????
         
@@ -323,9 +348,9 @@ while(1)
 %                 end
 %                 hold off;
             % AXIS 6        
-%                 cla(hAxes.axis6,'reset');       
-%                 plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
-%                 set(hAxes.axis6,'Color','Black');
+                cla(hAxes.axis6,'reset');       
+                plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
+                set(hAxes.axis6,'Color','Black');
                 
             % AXIS 7
 %                 cla(hAxes.axis7,'reset');    
@@ -501,7 +526,12 @@ end
             % Plotting Rate
             hText.plotHz = uicontrol('Style','text',...
                 'Position',[800 5 200 15],...
-                'String','Plotting Rate.....0');                      
+                'String','Plotting Rate.....0');
+            
+            % Finger Positions      
+            hText.fingers = uicontrol('Style','text',...
+                'Position',[1000 25 200 15],...
+                'String','1:0...2:0...3:0...4:0...5:0');               
     end
 
     function captureCallback(hObject,~,cam,hAxes)        
@@ -517,6 +547,10 @@ end
         clear('cam');
         % Close the figure window
         close(hFig);
+        % Close the bluetooth
+        fclose(bt);
+        clear('bt');
+        instrreset;
     end
 
 end
