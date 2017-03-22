@@ -32,6 +32,7 @@ img.hist_i = 1; % Histogram Iterator
 
 % IMAGE CAPTURE          
 hand = imresize(snapshot(cam), img.resize); 
+hand = rot90(hand,2);
 hand_g = rgb2gray(hand);        
 [img.h, img.w] = size(hand_g); % Height and Width of Image
 
@@ -101,6 +102,7 @@ while(1)
     if(state == 0)
         % Resize and Show Image
         hand = imresize(snapshot(cam), img.resize); 
+        hand = rot90(hand,2);        
         hand_g = rgb2gray(hand);             
         imshow(hand, 'Parent', hAxes.axis1);
         
@@ -120,6 +122,7 @@ while(1)
                   
         % Resize Image
         hand = imresize(snapshot(cam), img.resize); 
+        hand = rot90(hand,2); % Rotate Image
         hand_g = rgb2gray(hand);        
         [img.h, img.w] = size(hand_g); % Height and Width of Image
         
@@ -290,7 +293,8 @@ while(1)
     elseif(state == 2)
         
         % Resize and Show Image            
-        hand = imresize(snapshot(cam), img.resize); 
+        hand = imresize(snapshot(cam), img.resize);
+        hand = rot90(hand,2);        
         hand_g = rgb2gray(hand);        
         [img.h, img.w] = size(hand_g); % Height and Width of Image
                          
