@@ -5,11 +5,12 @@ clearvars;
 close all;
 
 % Create Webcam Object
-cam = webcam('USB2.0 VGA UVC WebCam');
+%cam = webcam('USB2.0 VGA UVC WebCam');
+cam = webcam('USB Video Device');
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor
-img.hist_n = 5;%5;    % Number of Histogram Regions
+img.hist_n = 3;%5;    % Number of Histogram Regions
 
 img.hist_pad = 10; 
 img.hist_step = 1;
@@ -33,6 +34,10 @@ img.hist_i = 1; % Histogram Iterator
 hand = imresize(snapshot(cam), img.resize); 
 hand_g = rgb2gray(hand);        
 [img.h, img.w] = size(hand_g); % Height and Width of Image
+
+% BACKGROUND SUBTRACTION
+alpha = 0.1;
+background = hand_g;
 
 % ARC PARAMETERS
 img.arc_n = 10; % Number of Arcs for Finger Detection  
@@ -96,7 +101,16 @@ while(1)
     if(state == 0)
         % Resize and Show Image
         hand = imresize(snapshot(cam), img.resize); 
+        hand_g = rgb2gray(hand);             
         imshow(hand, 'Parent', hAxes.axis1);
+        
+        % BACKGROUND SUBTRACTION        
+        foreground = imabsdiff(background,hand_g);
+        fg_mask = imbinarize(foreground,50/255);
+        
+        background = (1-alpha)*background + alpha*hand_g;
+        %imshow(fg_mask, 'Parent', hAxes.axis2);
+        
         
     elseif(state == 1)
   
@@ -108,7 +122,14 @@ while(1)
         hand = imresize(snapshot(cam), img.resize); 
         hand_g = rgb2gray(hand);        
         [img.h, img.w] = size(hand_g); % Height and Width of Image
-                
+        
+%         % BACKGROUND SUBTRACTION        
+%         foreground = imabsdiff(background,hand_g);
+%         fg_mask = imbinarize(foreground,50/255);
+%         
+%         background = (1-alpha)*background + alpha*hand_g;
+%         imshow(fg_mask, 'Parent', hAxes.axis2);
+        
         % MASK IMAGE (COLOR HISTOGRAM)
         hand_mask = false(img.h,img.w);    
         for i=1:img.hist_n
@@ -120,7 +141,10 @@ while(1)
 %             [ img, hand_mask_bw ] = MaskImageAvg( img, hand );
 %             hand_mask = hand_mask_bw;
 
-
+        % COMBINE BACKGROUND SUBTRACTION AND COLOR SEGMENTATION
+        %hand_mask = hand_mask & fg_mask;
+        
+        
         % FIND LARGEST BLOB (COLOR REGION)
         BW = hand_mask;
         CC = bwconncomp(BW);
@@ -130,8 +154,7 @@ while(1)
         palm_blob = hand_mask - BW;
         
         % MEDIAN FILTER
-        palm_med = ordfilt2(palm_blob, 5, true(3,3));
-        
+        palm_med = ordfilt2(palm_blob, 5, true(3,3));                  
         
         % CALCULATE CENTROID
         %[ img ] = Centroid( img, palm_blob );
@@ -139,7 +162,7 @@ while(1)
 
         
         % ITERABLE CIRCLES
-        mask = false(2*img.circle(end).radius+1, 2*img.circle(end).radius+1);
+        mask = false(round(2*img.circle(end).radius+1), round(2*img.circle(end).radius+1));
         for i=1:length(img.circle(:))
             img.circle(i).intersection_norm = false(img.norm_arc, 1);            
             for j=1:img.norm_arc
@@ -213,29 +236,29 @@ while(1)
         plotHz = tic; 
 
             % AXIS 1
-                cla(hAxes.axis1,'reset');       
-                imshow(hand, 'Parent', hAxes.axis1);   
-                rectangle('Position',hand_rect,'EdgeColor','r','LineWidth',2, 'Parent', hAxes.axis1);         
+%                 cla(hAxes.axis1,'reset');       
+%                 imshow(hand, 'Parent', hAxes.axis1);   
+%                 rectangle('Position',hand_rect,'EdgeColor','r','LineWidth',2, 'Parent', hAxes.axis1);         
             % AXIS 2
-                cla(hAxes.axis2,'reset');       
-                imshow(hand_mask, 'Parent', hAxes.axis2);
+            %    cla(hAxes.axis2,'reset');       
+            %    imshow(hand_mask, 'Parent', hAxes.axis2);
             % AXIS 3
-                cla(hAxes.axis3,'reset');       
-                imshow(mask, 'Parent', hAxes.axis3);     
+%                 cla(hAxes.axis3,'reset');       
+%                 imshow(mask, 'Parent', hAxes.axis3);     
             % AXIS 4
                 cla(hAxes.axis4,'reset');       
                 imshow(palm_med, 'Parent', hAxes.axis4);    
             % AXIS 5
-                cla(hAxes.axis5,'reset');  
-                axes(hAxes.axis5);
-                for a=img.arc_n:-1:1
-                    plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
-                end
-                hold off;
+%                 cla(hAxes.axis5,'reset');  
+%                 axes(hAxes.axis5);
+%                 for a=img.arc_n:-1:1
+%                     plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
+%                 end
+%                 hold off;
             % AXIS 6        
-                cla(hAxes.axis6,'reset');       
-                plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
-                set(hAxes.axis6,'Color','Black');
+%                 cla(hAxes.axis6,'reset');       
+%                 plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
+%                 set(hAxes.axis6,'Color','Black');
             % AXIS 7
 %                 cla(hAxes.axis7,'reset');    
 %                 for f=1:img.node_id
