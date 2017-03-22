@@ -5,10 +5,12 @@ clearvars;
 close all;
 
 % Create Webcam Object
+%<<<<<<< Updated upstream
 %cam = webcam('USB2.0 VGA UVC WebCam');
 cam = webcam('USB Video Device');
+=======
 cam = webcam('USB Camera');
-
+%>>>>>>> Stashed changes
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor
@@ -34,7 +36,6 @@ img.hist_i = 1; % Histogram Iterator
 
 % IMAGE CAPTURE          
 hand = imresize(snapshot(cam), img.resize); 
-hand = rot90(hand,2);
 hand_g = rgb2gray(hand);        
 [img.h, img.w] = size(hand_g); % Height and Width of Image
 
@@ -112,12 +113,14 @@ while(1)
     if(state == 0)
         % Resize and Show Image
         hand = imresize(snapshot(cam), img.resize); 
-
-        hand = rot90(hand,2);        
-
-
+<<<<<<< Updated upstream
         hand_g = rgb2gray(hand);             
+=======
+        
+                hand_g = rgb2gray(hand);        
 
+        
+>>>>>>> Stashed changes
         imshow(hand, 'Parent', hAxes.axis1);
         
         % BACKGROUND SUBTRACTION        
@@ -136,10 +139,9 @@ while(1)
                   
         % Resize Image
         hand = imresize(snapshot(cam), img.resize); 
-        hand = rot90(hand,2); % Rotate Image
         hand_g = rgb2gray(hand);        
         [img.h, img.w] = size(hand_g); % Height and Width of Image
-
+<<<<<<< Updated upstream
         
 %         % BACKGROUND SUBTRACTION        
 %         foreground = imabsdiff(background,hand_g);
@@ -147,10 +149,11 @@ while(1)
 %         
 %         background = (1-alpha)*background + alpha*hand_g;
 %         imshow(fg_mask, 'Parent', hAxes.axis2);
-
+=======
                 
         %background subtraction
-
+        
+>>>>>>> Stashed changes
         
         % MASK IMAGE (COLOR HISTOGRAM)
         hand_mask = false(img.h,img.w);    
@@ -176,21 +179,24 @@ while(1)
         palm_blob = hand_mask - BW;
         
         % MEDIAN FILTER
-
+<<<<<<< Updated upstream
         palm_med = ordfilt2(palm_blob, 5, true(3,3));                  
-
-        %palm_med = ordfilt2(palm_blob, 13, true(5,5));
+=======
+        palm_med = ordfilt2(palm_blob, 13, true(5,5));
         
-
+>>>>>>> Stashed changes
+        
         % CALCULATE CENTROID
         %[ img ] = Centroid( img, palm_blob );
         [ img ] = Centroid( img, palm_med );
 
         
         % ITERABLE CIRCLES
-
+<<<<<<< Updated upstream
         mask = false(round(2*img.circle(end).radius+1), round(2*img.circle(end).radius+1));
-
+=======
+        mask = false(round(2*img.circle(end).radius)+1, round(2*img.circle(end).radius+1));
+>>>>>>> Stashed changes
         for i=1:length(img.circle(:))
             img.circle(i).intersection_norm = false(img.norm_arc, 1);            
             for j=1:img.norm_arc
@@ -304,18 +310,25 @@ while(1)
 %                 imshow(hand, 'Parent', hAxes.axis1);   
 %                 rectangle('Position',hand_rect,'EdgeColor','r','LineWidth',2, 'Parent', hAxes.axis1);         
             % AXIS 2
+<<<<<<< Updated upstream
             %    cla(hAxes.axis2,'reset');       
             %    imshow(hand_mask, 'Parent', hAxes.axis2);
             % AXIS 3
+=======
                 cla(hAxes.axis2,'reset');       
                 imshow(hand_mask, 'Parent', hAxes.axis2);
 %             AXIS 3
+>>>>>>> Stashed changes
 %                 cla(hAxes.axis3,'reset');       
 %                 imshow(mask, 'Parent', hAxes.axis3);     
             % AXIS 4
                 cla(hAxes.axis4,'reset');       
                 imshow(palm_med, 'Parent', hAxes.axis4);    
+<<<<<<< Updated upstream
             % AXIS 5
+=======
+%             % AXIS 5
+>>>>>>> Stashed changes
 %                 cla(hAxes.axis5,'reset');  
 %                 axes(hAxes.axis5);
 %                 for a=img.arc_n:-1:1
@@ -323,10 +336,16 @@ while(1)
 %                 end
 %                 hold off;
             % AXIS 6        
+<<<<<<< Updated upstream
 %                 cla(hAxes.axis6,'reset');       
 %                 plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
 %                 set(hAxes.axis6,'Color','Black');
+=======
+                cla(hAxes.axis6,'reset');       
+                plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6);
+                set(hAxes.axis6,'Color','Black');
                 
+>>>>>>> Stashed changes
             % AXIS 7
 %                 cla(hAxes.axis7,'reset');    
 %                 for f=1:img.node_id
@@ -358,8 +377,7 @@ while(1)
     elseif(state == 2)
         
         % Resize and Show Image            
-        hand = imresize(snapshot(cam), img.resize);
-        hand = rot90(hand,2);        
+        hand = imresize(snapshot(cam), img.resize); 
         hand_g = rgb2gray(hand);        
         [img.h, img.w] = size(hand_g); % Height and Width of Image
                          
