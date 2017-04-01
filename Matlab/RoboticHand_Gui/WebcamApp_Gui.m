@@ -8,7 +8,7 @@ close all;
 % Key Parameters
 foreground_v_background = 0;
 dynamic_background = 0 & foreground_v_background;
-bluetooth_On = 0;
+bluetooth_On = 1;
 rot90_On = 1;
 
 % Create Webcam Object
@@ -304,6 +304,8 @@ while(1)
         original_data = data;
         fingers_i = zeros(10,1);
         fingers = zeros(10,1);
+        img.history_avg_n = 30;
+        fingers_history = zeros(length(fingers),img.history_avg_n);
         for i = 1:length(fingers)
             [value,index] = max(data);
             
@@ -317,7 +319,10 @@ while(1)
                         
             data(range) = 0;
             
-            fingers(i) = max(img.intersect(range));            
+            fingers(i) = max(img.intersect(range)); 
+            for j = 1:img.history_avg_n
+                fingers_history(i,j) = max(img.history(range,j));
+            end
             fingers_i(i) = index;            
         end
 
@@ -337,25 +342,26 @@ while(1)
             img.finger(i).index = fingers_i(I(i));            
             
             % Normalize
-            img.finger(i).max = max(img.finger(i).value,img.finger(i).max);
-            img.finger(i).norm = img.finger(i).value/img.finger(i).max;
+            %img.finger(i).max = max(img.finger(i).value,img.finger(i).max);
+            %img.finger(i).norm = img.finger(i).value/img.finger(i).max;
+            img.finger(i).norm = img.finger(i).value/max(fingers_history(I(i),:));            
         end
             
         display_data = original_data - data;
         
-        thumb=  fingers_i(1);
-        index=  fingers_i(2);
-        middle= fingers_i(3);
-        ring=   fingers_i(4);
-        pinky=  fingers_i(5);
+        thumb=  img.finger(1).norm;
+        index=  img.finger(2).norm;
+        middle= img.finger(3).norm;
+        ring=   img.finger(4).norm;
+        pinky=  img.finger(5).norm;
         
                  
         
-        thumb=  max(img.intersect(1:10));%fingers_i(1);
-        index=  max(img.intersect(11:19));%fingers_i(2);
-        middle= max(img.intersect(20:27));%fingers_i(3);
-        ring=   max(img.intersect(28:35));%fingers_i(4);
-        pinky=  max(img.intersect(36:50));%fingers_i(5);        
+%         thumb=  max(img.intersect(1:10));%fingers_i(1);
+%         index=  max(img.intersect(11:19));%fingers_i(2);
+%         middle= max(img.intersect(20:27));%fingers_i(3);
+%         ring=   max(img.intersect(28:35));%fingers_i(4);
+%         pinky=  max(img.intersect(36:50));%fingers_i(5);        
         
             
 

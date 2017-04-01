@@ -8,7 +8,7 @@ close all;
 % Key Parameters
 foreground_v_background = 0;
 dynamic_background = 0 & foreground_v_background;
-bluetooth_On = 0;
+bluetooth_On = 1;
 rot90_On = 1;
 
 % Create Webcam Object
@@ -95,7 +95,7 @@ img.var = zeros(img.norm_arc,1);
 
 % FINGER TIPS
 img.finger_n = 5;
-img.finger_width = round(img.norm_arc/1);
+img.finger_width = round(img.norm_arc/15);
 for f=img.finger_n:-1:1
     img.finger(f).index = 0;
     img.finger(f).value = 0;
@@ -304,6 +304,7 @@ while(1)
         original_data = data;
         fingers_i = zeros(10,1);
         fingers = zeros(10,1);
+        fingers_history = zeros(length(fingers),10,img.history_n);
         for i = 1:length(fingers)
             [value,index] = max(data);
             
@@ -317,7 +318,8 @@ while(1)
                         
             data(range) = 0;
             
-            fingers(i) = max(img.avg(range));            
+            fingers(i) = max(img.intersect(range));   
+            %fingers_history(i,10,:) = img.history(range,:);
             fingers_i(i) = index;            
         end
 
@@ -343,11 +345,11 @@ while(1)
             
         display_data = original_data - data;
         
-        thumb=  fingers_i(1);
-        index=  fingers_i(2);
-        middle= fingers_i(3);
-        ring=   fingers_i(4);
-        pinky=  fingers_i(5);
+        thumb=  img.fingers(1).norm;
+        index=  img.fingers(1).norm;
+        middle= img.fingers(1).norm;
+        ring=   img.fingers(1).norm;
+        pinky=  img.fingers(1).norm;
         
                  
         
