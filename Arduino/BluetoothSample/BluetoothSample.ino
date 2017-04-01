@@ -15,6 +15,8 @@ int bufpos;
 double finger[5];
 int finger_i;
 
+int bluetooth_timeout = 0;
+
 void setup() {
   // initialize both serial ports:
   Serial.begin(9600);
@@ -41,12 +43,17 @@ void setup() {
 void loop(){
   // Bluetooth Read (Tx1,Rx1)
   bluetoothRead();
-
-  if(servo){
-    myservo1.write((int)(180-finger[4]+90));
-    myservo2.write((int)(180-finger[3]*90)); 
-    myservo3.write((int)(180-finger[2]*90));
-    myservo4.write((int)(180-finger[1]*90));
+  if (bluetooth_timeout >= 20) {
+    myservo1.write(90);
+    myservo2.write(90);
+    myservo3.write(90);
+    myservo4.write(90);
+  }
+  else if(servo){
+    myservo1.write((int)(finger[4]*90));
+    myservo2.write((int)(finger[3]*90)); 
+    myservo3.write((int)(finger[2]*90));
+    myservo4.write((int)(finger[1]*90));
   }
   else{
     motor.run(FORWARD);
@@ -74,8 +81,12 @@ void loop(){
 // Bluetooth Read
 void bluetoothRead(){
 
+  if (bluetooth_timeout <= 21) {
+    bluetooth_timeout++;
+  }
   
   while(Serial1.available()) {
+    bluetooth_timeout = 0;
     char inchar = Serial1.read(); 
 
     // DEBUG
