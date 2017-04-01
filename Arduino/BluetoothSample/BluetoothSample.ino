@@ -52,7 +52,7 @@ void loop(){
   else if(servo){
     myservo1.write((int)(finger[4]*90));
     myservo2.write((int)(finger[3]*90)); 
-    myservo3.write((int)(finger[2]*90));
+    myservo3.write((int)(90+finger[2]*90));
     myservo4.write((int)(finger[1]*90));
   }
   else{
