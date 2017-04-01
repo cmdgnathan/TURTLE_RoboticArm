@@ -8,7 +8,7 @@ Servo myservo1, myservo2, myservo3, myservo4, mysevro5;
 boolean servo = true;
 
 // Serial Buffer
-char buf[64]; 
+char buf[64];
 int bufpos;
 
 // Control Variables
@@ -25,19 +25,19 @@ void setup() {
   bufpos = 0; // Initialize Buffer Position
 
   if(servo){
-    myservo1.attach(5); //servo attached to 9 pin on Arduino 
+    myservo1.attach(5); //servo attached to 9 pin on Arduino
     myservo2.attach(4);
     myservo3.attach(3);
     myservo4.attach(2);
-    
-     
+
+
   }
-  else{    
+  else{
     motor.setSpeed(200); // turn on motor
     motor.run(RELEASE);
   }
-  
-  
+
+
 }
 
 void loop(){
@@ -50,17 +50,17 @@ void loop(){
     myservo4.write(90);
   }
   else if(servo){
-    myservo1.write((int)(finger[4]*90));
-    myservo2.write((int)(-finger[3]*90)); 
-    myservo3.write((int)(finger[2]*90));
-    myservo4.write((int)(finger[1]*90));
+    myservo1.write((int)(finger[4]*80));
+    myservo2.write((int)(-finger[3]*80));
+    myservo3.write((int)(finger[2]*80));
+    myservo4.write((int)(finger[1]*80));
   }
   else{
     motor.run(FORWARD);
     motor.setSpeed((int)(255*finger[2]));
   }
 
-    
+
 
 
   for(int i = 0; i < 5; i++){
@@ -70,8 +70,8 @@ void loop(){
     Serial.print("\t");
   }
   Serial.println();
-       
-    
+
+
 
 
 }
@@ -84,10 +84,10 @@ void bluetoothRead(){
   if (bluetooth_timeout <= 21) {
     bluetooth_timeout++;
   }
-  
+
   while(Serial1.available()) {
     bluetooth_timeout = 0;
-    char inchar = Serial1.read(); 
+    char inchar = Serial1.read();
 
     // DEBUG
     //Serial.print(inchar);
@@ -96,16 +96,16 @@ void bluetoothRead(){
       buf[bufpos] = inchar;
       bufpos++;
     }
-    else{     
+    else{
       buf[bufpos] = 0;
-      bufpos = 0;  
+      bufpos = 0;
 
       char* token = strtok(buf,":");
       finger_i = atoi(token);
-      
+
       token = (strtok(NULL,":"));
       finger[finger_i] = atoi(token) / 99.0;
-      
+
       //////////////////////////////////////
       // VERIFY
       //Serial.print(finger_i);
@@ -113,10 +113,8 @@ void bluetoothRead(){
       //Serial.println(finger[finger_i]);
       //////////////////////////////////////
     }
-    
-    
-    
-  }  
+
+
+
+  }
 }
-
-
