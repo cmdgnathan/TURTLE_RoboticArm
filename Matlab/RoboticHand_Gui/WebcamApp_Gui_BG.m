@@ -6,13 +6,14 @@ close all;
 
 
 % Key Parameters
-foreground_v_background = 1;
+foreground_v_background = 0;
 dynamic_background = 0 & foreground_v_background;
 bluetooth_On = 0;
-rot90_On = 0;
+rot90_On = 1;
 
 % Create Webcam Object
-cam = webcam('USB2.0 VGA UVC WebCam');
+cam = webcam('Logitech HD Webcam C270');
+%cam = webcam('USB2.0 VGA UVC WebCam');
 %cam = webcam('USB Video Device');
 %cam = webcam('USB Camera');
 
@@ -33,20 +34,18 @@ end
 
 % Parameters
 img.resize = 0.25; % Image Resize Factor
-img.hist_n = 3;%5;    % Number of Histogram Regions
+img.hist_n = 2;%5;    % Number of Histogram Regions
 
 img.hist_pad = 10; 
 img.hist_step = 1;
 
 img.hist_bins = 256; % Number of Histogram Bins
 img.hist_thresh = 0.8; % Threshold Proportion of Maximum Value
-img.hist_width = round(40/img.hist_n); % 20 Intensity Value to Left and Right
+img.hist_width = 80;%round(40/img.hist_n); % 20 Intensity Value to Left and Right
 
 img.hist_i = 1; % Histogram Iterator
 
-% GUI
-[hFig, hAxes] = createFigureAndAxes();
-[hText] = insertButtons(hFig, hAxes, cam);
+
 
 
 % INITIAL (RUN ONCE)
@@ -67,7 +66,7 @@ background = hand_g;
 img.arc_n = 10; % Number of Arcs for Finger Detection  
 img.arc_outer = img.arc_n; % Outer Ring of Arc
 img.arc_min = img.h/16.0; % Minimum Arc Radius
-img.arc_max = img.h/4.0; % Maximum Arc Radius
+img.arc_max = round( min(img.h/2,img.w/2) );%img.h/4.0; % Maximum Arc Radius
 
 img.arc_crossing = zeros(img.arc_n,1);
 
@@ -86,14 +85,22 @@ for n=img.node_n:-1:1
     img.node(n).id = 0;
 end
 
+% HISTORY
+img.history_n = 100;
+img.history = zeros(img.norm_arc,img.history_n);
+
+% STATISTICS
+img.avg = zeros(img.norm_arc,1);
+img.var = zeros(img.norm_arc,1);
+
 % FINGER TIPS
-img.finger_n = 10;
-img.finger_width = 10;
+img.finger_n = 5;
+img.finger_width = round(img.norm_arc/15);
 for f=img.finger_n:-1:1
-    img.finger(f).left = 0;
-    img.finger(f).right = 0;
     img.finger(f).index = 0;
     img.finger(f).value = 0;
+    img.finger(f).max = 1;
+    img.finger(f).norm = 0;
 end
 
 %DETERMINE THE MAX OF EACH FINGER (TO BE OVERWRITTEN)
@@ -110,6 +117,12 @@ pinky_max = 1;
 % NORMALIZE ITERABLE CIRCLE
 [ img ] = NormalizeCircle( img );
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GUI
+[hFig, hAxes] = createFigureAndAxes();
+[hText] = insertButtons(hFig, hAxes, cam);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Main
 state = 0;
 totHz = tic;
@@ -119,7 +132,10 @@ while(1)
     % Update Text Boxes
         % Histogram Width
             entry = sprintf('%d',img.hist_width);
-            set(hText.HistWidth, 'String', strcat('Histogram Acceptance...',entry));    
+            set(hText.HistWidth, 'String', strcat('Histogram Acceptance...',entry)); 
+        % Finger Width
+            entry = sprintf('%d',img.finger_width);
+            set(hText.FingerWidth, 'String', strcat('Finger Width...',entry));            
         % Overall Rate
             entry = sprintf('%10.5f',(1/toc(totHz)));
             set(hText.totHz, 'String', strcat('Overall Rate...',entry));    
@@ -263,7 +279,9 @@ while(1)
         img.intersect = zeros(img.norm_arc,1);        
         for a=img.arc_n:-1:1
             img.intersect = img.intersect + a^2*img.circle(a).intersection_norm;
-        end                                     
+        end  
+        
+        
         % DETERMINE FINGERS
         %[ img ] = Fingering( img );        
         
@@ -271,8 +289,18 @@ while(1)
         st = regionprops(palm_blob, 'BoundingBox');
         hand_rect = st.BoundingBox;  
         
-        % FINGER EXTRACTION
-        data = img.intersect;
+        % HISTORY
+        img.history(:,2:end) = img.history(:,1:end-1);
+        img.history(:,1) = img.intersect;
+        
+        % STATISTICS
+        for i = 1:img.norm_arc
+            img.avg(i) = mean(img.history(i,:));
+            img.var(i) = var(img.history(i,:));
+        end  
+                
+        % FINGER EXTRACTION FROM VARIANCE
+        data = img.var;
         original_data = data;
         fingers_i = zeros(10,1);
         fingers = zeros(10,1);
@@ -284,27 +312,51 @@ while(1)
             if(min(range)<=0)
                 range = range + abs(min(range))+1;                
             elseif(max(range)>length(data))
-                range = range - (max(range)-100) - 1;
+                range = range - (max(range)-img.norm_arc) - 1;
             end
                         
             data(range) = 0;
             
-            fingers(i) = value;
+            fingers(i) = max(img.intersect(range));            
             fingers_i(i) = index;            
         end
 
-        [~,I] = sort(fingers_i);
+        set(hText.index_value, 'String', strcat('1:',num2str(fingers_i(1)),'-', ...
+                                                '2:',num2str(fingers_i(2)),'-', ...
+                                                '3:',num2str(fingers_i(3)),'-', ...
+                                                '4:',num2str(fingers_i(4)),'-', ...
+                                                '5:',num2str(fingers_i(5)) ));
         
-        img.fingers(:).value = fingers(I);
-        img.fingers(:).index = fingers_i(I);
-          
+                
+        % Sort and Normalize Fingers
+        [~,I] = sort(fingers_i);        
+
+        for i = 1:img.finger_n
+            % Sort
+            img.finger(i).value = fingers(I(i));
+            img.finger(i).index = fingers_i(I(i));            
+            
+            % Normalize
+            img.finger(i).max = max(img.finger(i).value,img.finger(i).max);
+            img.finger(i).norm = img.finger(i).value/img.finger(i).max;
+        end
+            
         display_data = original_data - data;
         
-        thumb=  fingers(1);
-        index=  fingers(2);
-        middle= fingers(3);
-        ring=   fingers(4);
-        pinky=  fingers(5);
+        thumb=  fingers_i(1);
+        index=  fingers_i(2);
+        middle= fingers_i(3);
+        ring=   fingers_i(4);
+        pinky=  fingers_i(5);
+        
+                 
+        
+        thumb=  max(img.intersect(1:10));%fingers_i(1);
+        index=  max(img.intersect(11:19));%fingers_i(2);
+        middle= max(img.intersect(20:27));%fingers_i(3);
+        ring=   max(img.intersect(28:35));%fingers_i(4);
+        pinky=  max(img.intersect(36:50));%fingers_i(5);        
+        
             
 
             %DETERMINE THE NEW MAX OF EACH FINGER
@@ -336,6 +388,8 @@ while(1)
         % TEXTBOX OUTPUT
         set(hText.fingers, 'String', strcat(Tx_0,'-',Tx_1,'-',Tx_2,'-',Tx_3,'-',Tx_4));                  
             
+        
+        
         % BLUETOOTH OUTPUT            
         if(bluetooth_On)
             fwrite(bt, strcat(Tx_0));
@@ -373,37 +427,52 @@ while(1)
             % AXIS 3
                 cla(hAxes.axis2,'reset');       
                 imshow(hand_mask, 'Parent', hAxes.axis2);
-%             AXIS 3
-%                 cla(hAxes.axis3,'reset');       
-%                 imshow(mask, 'Parent', hAxes.axis3);     
+            % AXIS 3
+                cla(hAxes.axis3,'reset');       
+                imshow(mask, 'Parent', hAxes.axis3);     
             % AXIS 4
                 cla(hAxes.axis4,'reset');       
                 imshow(palm_med, 'Parent', hAxes.axis4);    
             % AXIS 5
-%                 cla(hAxes.axis5,'reset');  
-%                 axes(hAxes.axis5);
-%                 for a=img.arc_n:-1:1
-%                     plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
-%                 end
-%                 hold off;
+                cla(hAxes.axis5,'reset');  
+                axes(hAxes.axis5);
+                for a=img.arc_n:-1:1
+                    plot(1:img.norm_arc, 1.0*img.circle(a).intersection_norm+a); hold on;  
+                end
+                hold off;
             % AXIS 6        
-                cla(hAxes.axis6,'reset');       
-                plot(img.intersect, 'Color', 'Red', 'Parent', hAxes.axis6); hold on;
+                cla(hAxes.axis6,'reset');   
+                axes(hAxes.axis6);
+                
+                max_intersect = max(img.intersect);
+                plot(img.intersect./max_intersect, 'Color', 'Red', 'Parent', hAxes.axis6); hold on;
                 %set(hAxes.axis6,'Color','Black');
                 
 %                 % PLOT FINGER LOCATIONS
-%                 for i = 1:img.finger_n
+%                 for i = 1:5
+%                     plot( (img.finger(i).index-img.finger_width):(img.finger(i).index+img.finger_width), 1, ...
+%                         'Parent', hAxes.axis6);
+%                     
 %                     patch([(img.finger(i).index-img.finger_width) (img.finger(i).index+img.finger_width) ...
 %                             (img.finger(i).index+img.finger_width) (img.finger(i).index-img.finger_width)], ...
-%                             [0 0 1 1], 'b', ...
-%                             'Parent', hAxes.axis6);
-%                     %alpha(0.2, 'Parent', hAxes.axis6);                       
+%                             [0 0 img.finger(i).value img.finger(i).value], 'b');
+%                             %'Parent', hAxes.axis6); hold on;
 %                 end
                 
                 
             % AXIS 7
-                cla(hAxes.axis7,'reset');  
-                plot(display_data, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;                
+                cla(hAxes.axis7,'reset'); 
+                axes(hAxes.axis7);
+
+                max_var = max(img.var);
+                max_display_data = max(display_data);
+                plot(img.var./max_var, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;  
+                peaks = zeros(img.norm_arc,1);
+                for i = 1:img.finger_n
+                    peaks(img.finger(i).index) = img.finger(i).norm;
+                end
+                plot(peaks, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;     
+                
                 %set(hAxes.axis7,'Color','Black');
 %                 cla(hAxes.axis7,'reset');    
 %                 for f=1:img.node_id
@@ -563,11 +632,22 @@ end
                 'String','Histogram Acceptance');
 
             sld = uicontrol('Style', 'slider',...
-                'Min',1,'Max',50,'Value',img.hist_width,...
-                'SliderStep', [1/(50-1), 1/(50-1)],... 
+                'Min',1,'Max',100,'Value',img.hist_width,...
+                'SliderStep', [1/(100-1), 1/(100-1)],... 
                 'Position', [400 5 200 20],...
                 'Callback', @sliderCB1);  
+            
+            hText.FingerWidth = uicontrol('Style','text',...
+                'Position',[1200 25 200 15],...
+                'String','Finger Width');
+            
+            sld = uicontrol('Style', 'slider',...
+                'Min',1,'Max',round(img.norm_arc/5),'Value',img.finger_width,...
+                'SliderStep', [1/(round(img.norm_arc/5)-1), 1/(round(img.norm_arc/5)-1)],... 
+                'Position',[1200 5 200 20],...
+                'Callback', @sliderCB2); 
         
+            
         % DATA        
             % Overall Rate
             hText.totHz = uicontrol('Style','text',...
@@ -585,7 +665,12 @@ end
             % Finger Positions      
             hText.fingers = uicontrol('Style','text',...
                 'Position',[1000 25 200 15],...
-                'String','1:0...2:0...3:0...4:0...5:0');               
+                'String','1:0...2:0...3:0...4:0...5:0');  
+            
+            % Finger Positions      
+            hText.index_value = uicontrol('Style','text',...
+                'Position',[1000 5 200 15],...
+                'String','0:0...20:0...40:0...60:0...80:0');  
     end
 
     function captureCallback(hObject,~,cam,hAxes)        
@@ -594,6 +679,10 @@ end
 
     function sliderCB1(hObject,~)        
         img.hist_width = uint8(hObject.Value);
+    end
+
+    function sliderCB2(hObject,~)        
+        img.finger_width = uint8(hObject.Value);
     end
 
     function exitCallback(~,~,cam,hFig)
@@ -608,5 +697,6 @@ end
             instrreset;
         end
     end
+
 
 end

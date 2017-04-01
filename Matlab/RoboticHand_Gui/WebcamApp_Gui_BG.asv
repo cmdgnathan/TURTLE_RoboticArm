@@ -95,7 +95,7 @@ img.var = zeros(img.norm_arc,1);
 
 % FINGER TIPS
 img.finger_n = 5;
-img.finger_width = round(img.norm_arc/15);
+img.finger_width = round(img.norm_arc/1);
 for f=img.finger_n:-1:1
     img.finger(f).index = 0;
     img.finger(f).value = 0;
@@ -317,7 +317,7 @@ while(1)
                         
             data(range) = 0;
             
-            fingers(i) = max(img.intersect(range));            
+            fingers(i) = max(img.avg(range));            
             fingers_i(i) = index;            
         end
 

@@ -45,7 +45,9 @@ img.hist_width = 80;%round(40/img.hist_n); % 20 Intensity Value to Left and Righ
 
 img.hist_i = 1; % Histogram Iterator
 
-
+% GUI
+[hFig, hAxes] = createFigureAndAxes();
+[hText] = insertButtons(hFig, hAxes, cam);
 
 
 % INITIAL (RUN ONCE)
@@ -95,12 +97,10 @@ img.var = zeros(img.norm_arc,1);
 
 % FINGER TIPS
 img.finger_n = 5;
-img.finger_width = round(img.norm_arc/15);
+img.finger_width = round(img.norm_arc/10);
 for f=img.finger_n:-1:1
     img.finger(f).index = 0;
     img.finger(f).value = 0;
-    img.finger(f).max = 1;
-    img.finger(f).norm = 0;
 end
 
 %DETERMINE THE MAX OF EACH FINGER (TO BE OVERWRITTEN)
@@ -117,12 +117,6 @@ pinky_max = 1;
 % NORMALIZE ITERABLE CIRCLE
 [ img ] = NormalizeCircle( img );
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% GUI
-[hFig, hAxes] = createFigureAndAxes();
-[hText] = insertButtons(hFig, hAxes, cam);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Main
 state = 0;
 totHz = tic;
@@ -132,10 +126,7 @@ while(1)
     % Update Text Boxes
         % Histogram Width
             entry = sprintf('%d',img.hist_width);
-            set(hText.HistWidth, 'String', strcat('Histogram Acceptance...',entry)); 
-        % Finger Width
-            entry = sprintf('%d',img.finger_width);
-            set(hText.FingerWidth, 'String', strcat('Finger Width...',entry));            
+            set(hText.HistWidth, 'String', strcat('Histogram Acceptance...',entry));    
         % Overall Rate
             entry = sprintf('%10.5f',(1/toc(totHz)));
             set(hText.totHz, 'String', strcat('Overall Rate...',entry));    
@@ -298,9 +289,10 @@ while(1)
             img.avg(i) = mean(img.history(i,:));
             img.var(i) = var(img.history(i,:));
         end  
-                
-        % FINGER EXTRACTION FROM VARIANCE
-        data = img.var;
+        
+        
+        % FINGER EXTRACTION
+        data = img.intersect;
         original_data = data;
         fingers_i = zeros(10,1);
         fingers = zeros(10,1);
@@ -317,30 +309,15 @@ while(1)
                         
             data(range) = 0;
             
-            fingers(i) = max(img.intersect(range));            
+            fingers(i) = value;
             fingers_i(i) = index;            
         end
 
-        set(hText.index_value, 'String', strcat('1:',num2str(fingers_i(1)),'-', ...
-                                                '2:',num2str(fingers_i(2)),'-', ...
-                                                '3:',num2str(fingers_i(3)),'-', ...
-                                                '4:',num2str(fingers_i(4)),'-', ...
-                                                '5:',num2str(fingers_i(5)) ));
+        [~,I] = sort(fingers_i);
         
-                
-        % Sort and Normalize Fingers
-        [~,I] = sort(fingers_i);        
-
-        for i = 1:img.finger_n
-            % Sort
-            img.finger(i).value = fingers(I(i));
-            img.finger(i).index = fingers_i(I(i));            
-            
-            % Normalize
-            img.finger(i).max = max(img.finger(i).value,img.finger(i).max);
-            img.finger(i).norm = img.finger(i).value/img.finger(i).max;
-        end
-            
+        img.fingers(:).value = fingers(I);
+        img.fingers(:).index = fingers_i(I);
+        
         display_data = original_data - data;
         
         thumb=  fingers_i(1);
@@ -349,7 +326,7 @@ while(1)
         ring=   fingers_i(4);
         pinky=  fingers_i(5);
         
-                 
+        
         
         thumb=  max(img.intersect(1:10));%fingers_i(1);
         index=  max(img.intersect(11:19));%fingers_i(2);
@@ -388,8 +365,6 @@ while(1)
         % TEXTBOX OUTPUT
         set(hText.fingers, 'String', strcat(Tx_0,'-',Tx_1,'-',Tx_2,'-',Tx_3,'-',Tx_4));                  
             
-        
-        
         % BLUETOOTH OUTPUT            
         if(bluetooth_On)
             fwrite(bt, strcat(Tx_0));
@@ -462,17 +437,9 @@ while(1)
                 
             % AXIS 7
                 cla(hAxes.axis7,'reset'); 
-                axes(hAxes.axis7);
-
-                max_var = max(img.var);
-                max_display_data = max(display_data);
-                plot(img.var./max_var, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;  
-                peaks = zeros(img.norm_arc,1);
-                for i = 1:img.finger_n
-                    peaks(img.finger(i).index) = img.finger(i).norm;
-                end
-                plot(peaks, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;     
                 
+                max_var = max(img.var);
+                plot(img.var./max_var, 'Color', 'Red', 'Parent', hAxes.axis7); hold on;                
                 %set(hAxes.axis7,'Color','Black');
 %                 cla(hAxes.axis7,'reset');    
 %                 for f=1:img.node_id
@@ -636,18 +603,7 @@ end
                 'SliderStep', [1/(100-1), 1/(100-1)],... 
                 'Position', [400 5 200 20],...
                 'Callback', @sliderCB1);  
-            
-            hText.FingerWidth = uicontrol('Style','text',...
-                'Position',[1200 25 200 15],...
-                'String','Finger Width');
-            
-            sld = uicontrol('Style', 'slider',...
-                'Min',1,'Max',round(img.norm_arc/5),'Value',img.finger_width,...
-                'SliderStep', [1/(round(img.norm_arc/5)-1), 1/(round(img.norm_arc/5)-1)],... 
-                'Position',[1200 5 200 20],...
-                'Callback', @sliderCB2); 
         
-            
         % DATA        
             % Overall Rate
             hText.totHz = uicontrol('Style','text',...
@@ -665,12 +621,7 @@ end
             % Finger Positions      
             hText.fingers = uicontrol('Style','text',...
                 'Position',[1000 25 200 15],...
-                'String','1:0...2:0...3:0...4:0...5:0');  
-            
-            % Finger Positions      
-            hText.index_value = uicontrol('Style','text',...
-                'Position',[1000 5 200 15],...
-                'String','0:0...20:0...40:0...60:0...80:0');  
+                'String','1:0...2:0...3:0...4:0...5:0');               
     end
 
     function captureCallback(hObject,~,cam,hAxes)        
@@ -679,10 +630,6 @@ end
 
     function sliderCB1(hObject,~)        
         img.hist_width = uint8(hObject.Value);
-    end
-
-    function sliderCB2(hObject,~)        
-        img.finger_width = uint8(hObject.Value);
     end
 
     function exitCallback(~,~,cam,hFig)
@@ -698,5 +645,19 @@ end
         end
     end
 
+    function [avg, variance] = movingStat(data)
+        
+        avg =      zeros( length(data),1 );
+        variance = zeros( length(data),1 );
+        
+        
+        avg(1) =      data(1);
+        variance(1) = data(1)^2;
+        for ii = 2:length(data)
+            avg(ii) =      avg(ii-1) + (1/ii)*(data(ii)-avg(ii-1));
+            variance(ii) = variance(ii-1) + (1/ii)*( (data(ii)-avg(ii))^2 - variance(ii-1) );
+        end
+        
+    end
 
 end
