@@ -3,9 +3,9 @@
 #include <Servo.h>
 
 AF_DCMotor motor(2);
-Servo myservo;
+Servo myservo1, myservo2, myservo3, myservo4, mysevro5;
 
-boolean servo = false;
+boolean servo = true;
 
 // Serial Buffer
 char buf[64]; 
@@ -23,7 +23,12 @@ void setup() {
   bufpos = 0; // Initialize Buffer Position
 
   if(servo){
-    myservo.attach(9); //servo attached to 9 pin on Arduino  
+    myservo1.attach(5); //servo attached to 9 pin on Arduino 
+    myservo2.attach(4);
+    myservo3.attach(3);
+    myservo4.attach(2);
+    
+     
   }
   else{    
     motor.setSpeed(200); // turn on motor
@@ -38,7 +43,10 @@ void loop(){
   bluetoothRead();
 
   if(servo){
-    myservo.write((int)(180*finger[0]));
+    myservo1.write((int)(180-finger[4]+90));
+    myservo2.write((int)(180-finger[3]*90)); 
+    myservo3.write((int)(180-finger[2]*90));
+    myservo4.write((int)(180-finger[1]*90));
   }
   else{
     motor.run(FORWARD);
@@ -47,7 +55,7 @@ void loop(){
 
     
 
-/*
+
   for(int i = 0; i < 5; i++){
     Serial.print(i);
     Serial.print(":");
@@ -55,7 +63,7 @@ void loop(){
     Serial.print("\t");
   }
   Serial.println();
-  */      
+       
     
 
 
